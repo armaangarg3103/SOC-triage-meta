@@ -70,19 +70,21 @@ def build_observation(
     turn_data = scenario["turns"][turn - 1]
     max_turns = scenario["max_turns"]
 
+    # Turn 1 has alert_text; later turns may only have additional_context
+    first_turn = scenario["turns"][0]
     return SOCAlertObservation(
         task_id=TaskID.task2_investigation,
         episode_id=episode_id,
         alert_id=scenario["id"],
         turn=turn,
         max_turns=max_turns,
-        alert_text=turn_data["alert_text"],
-        alert_source=turn_data["alert_source"],
-        timestamp=turn_data.get("timestamp", ""),
-        source_ip=turn_data.get("source_ip"),
-        dest_ip=turn_data.get("dest_ip"),
-        hostname=turn_data.get("hostname"),
-        user_account=turn_data.get("user_account"),
+        alert_text=turn_data.get("alert_text") or first_turn.get("alert_text", ""),
+        alert_source=turn_data.get("alert_source") or first_turn.get("alert_source", "siem"),
+        timestamp=turn_data.get("timestamp") or first_turn.get("timestamp", ""),
+        source_ip=turn_data.get("source_ip") or first_turn.get("source_ip"),
+        dest_ip=turn_data.get("dest_ip") or first_turn.get("dest_ip"),
+        hostname=turn_data.get("hostname") or first_turn.get("hostname"),
+        user_account=turn_data.get("user_account") or first_turn.get("user_account"),
         additional_context=turn_data.get("additional_context"),
         conversation_history=conversation_history or [],
         analyst_prompt=(

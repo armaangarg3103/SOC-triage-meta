@@ -305,7 +305,7 @@ def _build_gradio_ui() -> gr.Blocks:
                 t3_escalate  = gr.Radio(["True", "False"], label="Escalate to IR Team?")
                 t3_technique = gr.Textbox(label="MITRE Technique (e.g. T1566)")
             t3_reasoning = gr.Textbox(label="Reasoning", lines=3)
-            t3_submit    = gr.Button("📤 Submit Response", variant="secondary")
+            t3_submit_btn = gr.Button("📤 Submit Response", variant="secondary")
 
             gr.Markdown("---\n### 📊 Results")
             t3_score    = gr.HTML('<div class="score-box">—</div>')
@@ -488,7 +488,7 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
             return score_html, obs.get("feedback", ""), result.get("ground_truth", {})
 
         t3_reset_btn.click(t3_reset, outputs=[t3_ep_id, t3_alert, t3_source, t3_raw_log])
-        t3_submit.click(
+        t3_submit_btn.click(
             t3_submit,
             inputs=[t3_ep_id, t3_summary, t3_steps, t3_systems, t3_escalate, t3_technique, t3_reasoning],
             outputs=[t3_score, t3_feedback, t3_truth],
