@@ -1,0 +1,66 @@
+name: soc-alert-triage
+description: >
+  SOC Alert Triage environment: evaluates AI agents on Security Operations
+  Centre tasks including alert classification, MITRE ATT&CK investigation,
+  and incident response. Three difficulty tiers — easy, medium, hard.
+  Graders are deterministic (tasks 1 & 2) or hybrid with LLM judge fallback (task 3).
+
+version: "1.0.0"
+port: 7860
+
+tasks:
+  - id: task1_classification
+    name: "SOC Alert Classification"
+    difficulty: easy
+    description: >
+      Single-turn alert triage. Agent receives a SOC alert from SIEM/IDS/EDR
+      and must determine if it is a real threat or false positive, then classify
+      the alert type (phishing, malware, lateral_movement, data_exfil, false_positive).
+    grader: deterministic
+    max_turns: 1
+    expected_score: 0.72
+    scoring:
+      real_alert_detection: 0.5
+      alert_type_classification: 0.5
+
+  - id: task2_investigation
+    name: "Multi-Turn MITRE ATT&CK Investigation"
+    difficulty: medium
+    description: >
+      Multi-turn investigation (3–4 turns) where new forensic context is revealed
+      each turn. Agent must identify the MITRE ATT&CK tactic (e.g. TA0001),
+      severity (P1–P4), and which turn the attack began. Grader is a deterministic
+      MITRE lookup table — the framework is public documentation.
+    grader: deterministic_lookup
+    max_turns: 4
+    expected_score: 0.61
+    scoring:
+      mitre_tactic: 0.40
+      severity: 0.30
+      attack_started_at_turn: 0.30
+
+  - id: task3_response
+    name: "Incident Response Summary"
+    difficulty: hard
+    description: >
+      Confirmed high-severity incident. Agent must write an executive incident
+      summary, ordered containment steps, affected systems list, IR escalation
+      decision, and MITRE technique. Graded by MITRE accuracy check (deterministic)
+      + containment quality (heuristic) + LLM judge with fallback.
+    grader: hybrid
+    max_turns: 1
+    expected_score: 0.54
+    scoring:
+      mitre_technique_accuracy: 0.30
+      containment_quality: 0.30
+      escalation_decision: 0.20
+      response_quality: 0.20
+
+endpoints:
+  reset:  "POST /reset_task"
+  step:   "POST /step_task"
+  grade:  "POST /grader"
+  health: "GET /health"
+  info:   "GET /info"
+  tasks:  "GET /tasks"
+  ui:     "GET /ui"

