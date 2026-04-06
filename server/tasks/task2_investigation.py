@@ -65,6 +65,7 @@ def build_observation(
     episode_id: str,
     turn: int = 1,
     conversation_history: Optional[List[Dict]] = None,
+    reward: float = 0.0,
 ) -> SOCAlertObservation:
     """Build the observation for a given turn in the investigation."""
     turn_data = scenario["turns"][turn - 1]
@@ -95,7 +96,7 @@ def build_observation(
             )
         ),
         done=(turn == max_turns),
-        reward=0.0,
+        reward=reward,
     )
 
 

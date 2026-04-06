@@ -120,6 +120,10 @@ class SOCAlertEnvironment:
                 "turn":   self.current_turn,
                 "action": action.model_dump(exclude_none=True),
             })
+            
+            # Grade intermediate action to provide partial progress feedback
+            score, _, _ = self._run_grader(action)
+
             self.current_turn += 1
 
             obs = task2_investigation.build_observation(
@@ -127,6 +131,7 @@ class SOCAlertEnvironment:
                 self.episode_id,
                 turn=self.current_turn,
                 conversation_history=self.conversation_history,
+                reward=score,
             )
 
         self._last_observation = obs
