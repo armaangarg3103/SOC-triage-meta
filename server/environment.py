@@ -5,9 +5,9 @@ This is the single source of truth for episode logic.
 server/__init__.py and server/app.py both import from here.
 
 Episode flow:
-  1. POST /reset_task   → environment.reset(task_id) → SOCAlertObservation
-  2. POST /step_task    → environment.step(action)   → SOCAlertObservation (with reward)
-  3. POST /grader       → environment.grade_episode() → EpisodeResult
+  1. POST /reset   → environment.reset(task_id) → SOCAlertObservation
+  2. POST /step    → environment.step(action)   → SOCAlertObservation (with reward)
+  3. POST /grade       → environment.grade_episode() → EpisodeResult
 """
 
 import uuid
@@ -154,7 +154,7 @@ class SOCAlertEnvironment:
     # -----------------------------------------------------------------------
 
     def grade_episode(self) -> EpisodeResult:
-        """Return the full episode result (called by POST /grader)."""
+        """Return the full episode result (called by POST /grade)."""
         if self.scenario is None:
             raise RuntimeError("No active episode — call reset() first")
 

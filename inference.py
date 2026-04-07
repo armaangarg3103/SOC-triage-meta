@@ -89,7 +89,7 @@ def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
     
     try:
         # 1. Reset
-        r = http_client.post(f"{ENV_URL}/reset_task", json={"task_id": task_id})
+        r = http_client.post(f"{ENV_URL}/reset", json={"task_id": task_id})
         r.raise_for_status()
         obs = r.json()
         ep = obs["episode_id"]
@@ -102,7 +102,7 @@ def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
             
             # 2. Step in env
             try:
-                r2 = http_client.post(f"{ENV_URL}/step_task?episode_id={ep}", json=action)
+                r2 = http_client.post(f"{ENV_URL}/step?episode_id={ep}", json=action)
                 r2.raise_for_status()
                 obs = r2.json()
                 
@@ -124,7 +124,7 @@ def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
                 break
                 
         # 4. Final grade
-        r3 = http_client.post(f"{ENV_URL}/grader", json={"episode_id": ep})
+        r3 = http_client.post(f"{ENV_URL}/grade", json={"episode_id": ep})
         r3.raise_for_status()
         result = r3.json()
         

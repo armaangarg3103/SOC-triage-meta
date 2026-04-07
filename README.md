@@ -124,7 +124,7 @@ All endpoints accept/return JSON. Episode flow: `reset → step (×N turns) → 
 {"status": "ok", "environment": "soc-alert-triage"}
 ```
 
-### `POST /reset_task`
+### `POST /reset`
 ```json
 // Request
 {"task_id": "task1_classification", "episode_id": "optional-uuid"}
@@ -143,7 +143,7 @@ All endpoints accept/return JSON. Episode flow: `reset → step (×N turns) → 
 }
 ```
 
-### `POST /step_task?episode_id={episode_id}`
+### `POST /step?episode_id={episode_id}`
 ```json
 // Request: SOCAlertAction (include fields relevant to the task)
 {
@@ -165,7 +165,7 @@ All endpoints accept/return JSON. Episode flow: `reset → step (×N turns) → 
 }
 ```
 
-### `POST /grader`
+### `POST /grade`
 ```json
 // Request
 {"episode_id": "abc-123"}

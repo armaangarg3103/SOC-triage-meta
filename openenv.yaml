@@ -57,10 +57,10 @@ tasks:
       response_quality: 0.20
 
 endpoints:
-  reset:  "POST /reset_task"
-  step:   "POST /step_task"
+  reset:  "POST /reset"
+  step:   "POST /step"
   state:  "GET /state"
-  grade:  "POST /grader"
+  grade:  "POST /grade"
   health: "GET /health"
   info:   "GET /info"
   tasks:  "GET /tasks"

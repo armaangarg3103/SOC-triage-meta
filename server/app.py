@@ -5,9 +5,9 @@ Endpoints:
   GET  /health
   GET  /info
   GET  /tasks
-  POST /reset_task
-  POST /step_task
-  POST /grader
+  POST /reset
+  POST /step
+  POST /grade
   GET  /ui        ← Gradio interactive dashboard (mounted here)
 
 Run locally:
@@ -115,10 +115,10 @@ async def info():
             task3_response.TASK_INFO,
         ],
         "endpoints": {
-            "reset":  "POST /reset_task",
-            "step":   "POST /step_task",
+            "reset":  "POST /reset",
+            "step":   "POST /step",
             "state":  "GET /state",
-            "grade":  "POST /grader",
+            "grade":  "POST /grade",
             "ui":     "GET /",
         },
     }
@@ -139,7 +139,7 @@ async def list_tasks():
 # Core environment endpoints
 # ---------------------------------------------------------------------------
 
-@app.post("/reset_task", response_model=SOCAlertObservation, tags=["environment"])
+@app.post("/reset", response_model=SOCAlertObservation, tags=["environment"])
 async def reset_task(req: ResetRequest):
     """Start a new episode. Returns the first observation."""
     try:
@@ -155,14 +155,14 @@ async def reset_task(req: ResetRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.post("/step_task", response_model=SOCAlertObservation, tags=["environment"])
+@app.post("/step", response_model=SOCAlertObservation, tags=["environment"])
 async def step_task(action: SOCAlertAction, episode_id: str):
     """Submit an action and receive the next observation."""
     env = _EPISODES.get(episode_id)
     if env is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Episode '{episode_id}' not found. Call /reset_task first.",
+            detail=f"Episode '{episode_id}' not found. Call /reset first.",
         )
     try:
         obs = env.step(action)
@@ -182,7 +182,7 @@ async def get_state(episode_id: str):
     return env.state()
 
 
-@app.post("/grader", response_model=EpisodeResult, tags=["environment"])
+@app.post("/grade", response_model=EpisodeResult, tags=["environment"])
 async def grade_episode(req: GraderRequest):
     """Return the full scored result for a completed episode."""
     env = _EPISODES.get(req.episode_id)
@@ -343,9 +343,9 @@ def _build_gradio_ui() -> gr.Blocks:
 ### API Endpoints
 
 ```
-POST /reset_task   {"task_id": "task1_classification"}
-POST /step_task    {...action fields...}
-POST /grader       {"episode_id": "..."}
+POST /reset   {"task_id": "task1_classification"}
+POST /step    {...action fields...}
+POST /grade       {"episode_id": "..."}
 ```
 
 ### MITRE ATT&CK Integration
@@ -371,7 +371,7 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
 
         # Task 1 handlers
         def t1_reset():
-            r = httpx.post(f"{BASE_URL}/reset_task", json={"task_id": "task1_classification"})
+            r = httpx.post(f"{BASE_URL}/reset", json={"task_id": "task1_classification"})
             obs = r.json()
             return (
                 obs.get("episode_id", ""),
@@ -390,9 +390,9 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
                 "confidence":    float(confidence),
                 "reasoning":     reasoning,
             }
-            r = httpx.post(f"{BASE_URL}/step_task?episode_id={ep_id}", json=action)
+            r = httpx.post(f"{BASE_URL}/step?episode_id={ep_id}", json=action)
             obs = r.json()
-            r2  = httpx.post(f"{BASE_URL}/grader", json={"episode_id": ep_id})
+            r2  = httpx.post(f"{BASE_URL}/grade", json={"episode_id": ep_id})
             result = r2.json()
             score_pct = int(result.get("final_score", 0) * 100)
             color = "#00ff88" if score_pct >= 70 else "#ffaa00" if score_pct >= 40 else "#ff4444"
@@ -410,7 +410,7 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
         _t2_state: Dict = {}
 
         def t2_reset():
-            r = httpx.post(f"{BASE_URL}/reset_task", json={"task_id": "task2_investigation"})
+            r = httpx.post(f"{BASE_URL}/reset", json={"task_id": "task2_investigation"})
             obs = r.json()
             _t2_state["ep_id"]    = obs.get("episode_id", "")
             _t2_state["max_turn"] = obs.get("max_turns", 3)
@@ -433,10 +433,10 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
                 "attack_started_at_turn": int(atk_turn) if atk_turn else None,
                 "reasoning":             reasoning,
             }
-            r   = httpx.post(f"{BASE_URL}/step_task?episode_id={ep_id}", json=action)
+            r   = httpx.post(f"{BASE_URL}/step?episode_id={ep_id}", json=action)
             obs = r.json()
             if obs.get("done"):
-                r2     = httpx.post(f"{BASE_URL}/grader", json={"episode_id": ep_id})
+                r2     = httpx.post(f"{BASE_URL}/grade", json={"episode_id": ep_id})
                 result = r2.json()
                 score_pct = int(result.get("final_score", 0) * 100)
                 color = "#00ff88" if score_pct >= 70 else "#ffaa00" if score_pct >= 40 else "#ff4444"
@@ -468,7 +468,7 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
 
         # Task 3 handlers
         def t3_reset():
-            r = httpx.post(f"{BASE_URL}/reset_task", json={"task_id": "task3_response"})
+            r = httpx.post(f"{BASE_URL}/reset", json={"task_id": "task3_response"})
             obs = r.json()
             return (
                 obs.get("episode_id", ""),
@@ -491,9 +491,9 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
                 "reasoning":         reasoning,
                 "confidence":        0.9,
             }
-            r   = httpx.post(f"{BASE_URL}/step_task?episode_id={ep_id}", json=action)
+            r   = httpx.post(f"{BASE_URL}/step?episode_id={ep_id}", json=action)
             obs = r.json()
-            r2  = httpx.post(f"{BASE_URL}/grader", json={"episode_id": ep_id})
+            r2  = httpx.post(f"{BASE_URL}/grade", json={"episode_id": ep_id})
             result = r2.json()
             score_pct = int(result.get("final_score", 0) * 100)
             color = "#00ff88" if score_pct >= 70 else "#ffaa00" if score_pct >= 40 else "#ff4444"
