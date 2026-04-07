@@ -117,6 +117,7 @@ async def info():
         "endpoints": {
             "reset":  "POST /reset_task",
             "step":   "POST /step_task",
+            "state":  "GET /state",
             "grade":  "POST /grader",
             "ui":     "GET /",
         },
@@ -168,6 +169,17 @@ async def step_task(action: SOCAlertAction, episode_id: str):
         return obs
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/state", tags=["environment"])
+async def get_state(episode_id: str):
+    """Return the current internal state of the episode."""
+    env = _EPISODES.get(episode_id)
+    if env is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Episode '{episode_id}' not found.",
+        )
+    return env.state()
 
 
 @app.post("/grader", response_model=EpisodeResult, tags=["environment"])

@@ -59,6 +59,7 @@ tasks:
 endpoints:
   reset:  "POST /reset_task"
   step:   "POST /step_task"
+  state:  "GET /state"
   grade:  "POST /grader"
   health: "GET /health"
   info:   "GET /info"

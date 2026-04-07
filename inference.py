@@ -30,9 +30,9 @@ from models import SOCAlertAction
 # ---------------------------------------------------------------------------
 
 def get_llm_client() -> OpenAI:
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("GROQ_API_KEY")
     if not api_key:
-        print("❌ Missing GROQ_API_KEY environment variable. The inference agent requires this.", file=sys.stderr)
+        print("❌ Missing OPENAI_API_KEY or GROQ_API_KEY environment variable. The inference agent requires this.", file=sys.stderr)
         sys.exit(1)
         
     return OpenAI(

@@ -137,6 +137,18 @@ class SOCAlertEnvironment:
         self._last_observation = obs
         return obs
 
+    def state(self) -> dict:
+        """Return the current internal state of the environment."""
+        if self.scenario is None:
+            raise RuntimeError("No active episode — call reset() first")
+        return {
+            "episode_id": self.episode_id,
+            "task_id": self.task_id.value if self.task_id else None,
+            "current_turn": self.current_turn,
+            "max_turns": self.max_turns,
+            "last_observation": self._last_observation.model_dump() if self._last_observation else None
+        }
+
     # -----------------------------------------------------------------------
     # grade_episode
     # -----------------------------------------------------------------------
