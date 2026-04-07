@@ -26,6 +26,7 @@ import gradio as gr
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 from models import (
@@ -96,6 +97,10 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Health & Info endpoints
 # ---------------------------------------------------------------------------
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/ui")
 
 @app.get("/health", tags=["meta"])
 async def health():
