@@ -1,3 +1,18 @@
+---
+title: SOC Alert Triage
+emoji: 🛡️
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+tags:
+  - openenv
+  - cybersecurity
+  - hackathon
+---
+
 # 🛡️ SOC Alert Triage — OpenEnv Benchmark
 
 [![Hugging Face](https://img.shields.io/badge/🤗%20HF%20Space-soc--triage--meta-blue)](https://huggingface.co/spaces/armaangarg3103/soc-triage-meta)
