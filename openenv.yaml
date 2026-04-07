@@ -63,4 +63,4 @@ endpoints:
   health: "GET /health"
   info:   "GET /info"
   tasks:  "GET /tasks"
-  ui:     "GET /ui"
+  ui:     "GET /"

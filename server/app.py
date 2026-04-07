@@ -98,10 +98,6 @@ app.add_middleware(
 # Health & Info endpoints
 # ---------------------------------------------------------------------------
 
-@app.get("/", include_in_schema=False)
-async def root():
-    return RedirectResponse(url="/ui")
-
 @app.get("/health", tags=["meta"])
 async def health():
     return {"status": "ok", "environment": "soc-alert-triage"}
@@ -122,7 +118,7 @@ async def info():
             "reset":  "POST /reset_task",
             "step":   "POST /step_task",
             "grade":  "POST /grader",
-            "ui":     "GET /ui",
+            "ui":     "GET /",
         },
     }
 
@@ -502,10 +498,10 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
     return demo
 
 
-# Mount Gradio at /ui
+# Mount Gradio at /
 if os.getenv("ENABLE_WEB_INTERFACE", "true").lower() != "false":
     gradio_app = _build_gradio_ui()
-    app = gr.mount_gradio_app(app, gradio_app, path="/ui")
+    app = gr.mount_gradio_app(app, gradio_app, path="/")
 
 
 # ---------------------------------------------------------------------------
