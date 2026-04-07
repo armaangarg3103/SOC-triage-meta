@@ -1,7 +1,7 @@
 # 🛡️ SOC Alert Triage — OpenEnv Benchmark
 
-[![Hugging Face](https://img.shields.io/badge/🤗%20HF%20Space-soc--alert--triage-blue)](https://huggingface.co/spaces/)
-[![OpenEnv](https://img.shields.io/badge/OpenEnv-Compatible-green)](https://huggingface.co/)
+[![Hugging Face](https://img.shields.io/badge/🤗%20HF%20Space-soc--triage--meta-blue)](https://huggingface.co/spaces/armaangarg3103/soc-triage-meta)
+[![OpenEnv](https://img.shields.io/badge/OpenEnv-Compatible-green)](https://huggingface.co/spaces/armaangarg3103/soc-triage-meta)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
