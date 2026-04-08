@@ -54,7 +54,7 @@ _EPISODES: Dict[str, SOCAlertEnvironment] = {}
 # ---------------------------------------------------------------------------
 
 class ResetRequest(BaseModel):
-    task_id:    str
+    task_id:    Optional[str] = "task1_classification"
     episode_id: Optional[str] = None
     alert_id:   Optional[str] = None   # pin a specific scenario (for reproducible evals)
 
@@ -140,8 +140,12 @@ async def list_tasks():
 # ---------------------------------------------------------------------------
 
 @app.post("/reset", response_model=SOCAlertObservation, tags=["environment"])
-async def reset_task(req: ResetRequest):
-    """Start a new episode. Returns the first observation."""
+async def reset_task(req: Optional[ResetRequest] = None):
+    """
+    Initializes a new episode for a given task.
+    """
+    if req is None:
+        req = ResetRequest()
     try:
         env = SOCAlertEnvironment()
         obs = env.reset(
