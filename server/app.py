@@ -509,10 +509,9 @@ if os.getenv("ENABLE_WEB_INTERFACE", "true").lower() != "false":
     app = gr.mount_gradio_app(app, gradio_app, path="/")
 
 
-# ---------------------------------------------------------------------------
-# Local dev entry point
-# ---------------------------------------------------------------------------
+def main():
+    import uvicorn
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860)
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=True)
+    main()
