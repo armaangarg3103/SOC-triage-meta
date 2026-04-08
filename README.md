@@ -68,7 +68,7 @@ A confirmed high-severity incident. The agent must produce:
 - `+0.30` — MITRE technique referenced (deterministic)
 - `+0.30` — Containment quality (heuristic keyword coverage)
 - `+0.20` — Correct IR escalation decision (deterministic)
-- `+0.20` — LLM judge quality score (Groq, with heuristic fallback)
+- `+0.20` — LLM judge quality score (OpenAI, with heuristic fallback)
 
 ---
 
@@ -98,7 +98,7 @@ pip install -e ".[dev]"
 
 # 3. Configure environment
 cp .env.example .env
-# Edit .env: add your GROQ_API_KEY
+# Edit .env: add your OPENAI_API_KEY
 
 # 4. Start the server
 python -m server.app
@@ -213,9 +213,9 @@ meta hack/
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `GROQ_API_KEY` | Yes | — | LLM judge API key (Task 3) |
-| `API_BASE_URL` | No | Groq endpoint | Override LLM endpoint |
-| `MODEL_NAME` | No | `llama3-8b-8192` | LLM model name |
+| `OPENAI_API_KEY` | Yes | — | LLM judge API key (Task 3) |
+| `API_BASE_URL` | No | OpenAI endpoint | Override LLM endpoint |
+| `MODEL_NAME` | No | `gpt-4o-mini` | LLM model name |
 | `ENV_URL` | No | `http://localhost:7860` | Target URL for `inference.py` |
 
 ---

@@ -17,9 +17,9 @@ from openai import OpenAI
 from models import SOCAlertAction
 
 # Hackathon mandatory configuration
-API_KEY      = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or os.getenv("GROQ_API_KEY")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
-MODEL_NAME   = os.getenv("MODEL_NAME", "llama3-8b-8192")
+API_KEY      = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME   = os.getenv("MODEL_NAME", "gpt-4o-mini")
 BENCHMARK    = "soc-alert-triage"
 ENV_URL      = os.getenv("ENV_URL", "http://localhost:7860").rstrip("/")
 
@@ -40,7 +40,7 @@ def log_end(success: bool, steps: int, score: float, rewards: list) -> None:
 
 def get_llm_client() -> OpenAI:
     if not API_KEY:
-        print("❌ Missing HF_TOKEN, OPENAI_API_KEY, or GROQ_API_KEY environment variable.", file=sys.stderr)
+        print("❌ Missing HF_TOKEN or OPENAI_API_KEY environment variable.", file=sys.stderr)
         sys.exit(1)
         
     return OpenAI(

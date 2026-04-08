@@ -102,20 +102,20 @@ def _call_llm_judge(
     action: SOCAlertAction,
 ) -> float:
     """
-    Call an LLM (via Groq/OpenAI-compatible API) to score the incident response.
+    Call an LLM (via OpenAI) to score the incident response.
     Returns a float 0.0–1.0. Falls back to heuristic on any exception.
     """
     try:
-        from openai import OpenAI  # works for Groq too (same interface)
-
-        api_key  = os.getenv("GROQ_API_KEY", "")
-        api_base = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
-        model    = os.getenv("MODEL_NAME", "llama3-8b-8192")
-
+        from openai import OpenAI
+        
+        api_key  = os.getenv("OPENAI_API_KEY", "")
+        api_base = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+        
         if not api_key:
             return _heuristic_judge(scenario, action)
-
+        
         client = OpenAI(api_key=api_key, base_url=api_base)
+        model  = os.getenv("MODEL_NAME", "gpt-4o-mini")
 
         judge_prompt = f"""You are an expert SOC analyst and incident response trainer.
 
