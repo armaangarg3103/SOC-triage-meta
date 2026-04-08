@@ -17,7 +17,10 @@ from openai import OpenAI
 from models import SOCAlertAction
 
 # Hackathon mandatory configuration
-API_KEY      = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
+# HF_TOKEN is mandatory — no default, no fallback (per OpenEnv guidelines §3)
+HF_TOKEN     = os.getenv("HF_TOKEN")
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME", "gpt-4o-mini")
 BENCHMARK    = "soc-alert-triage"
@@ -33,19 +36,15 @@ def log_step(step: int, action: str, reward: float, done: bool, error: str = Non
     action_str = action.replace("\n", " ").replace("\r", "") if action else "null"
     print(f"[STEP] step={step} action={action_str} reward={reward:.2f} done={done_val} error={error_val}", flush=True)
 
-def log_end(success: bool, steps: int, score: float, rewards: list) -> None:
+def log_end(success: bool, steps: int, rewards: list) -> None:
     rewards_str = ",".join(f"{float(r):.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}", flush=True)
 
 
 def get_llm_client() -> OpenAI:
-    if not API_KEY:
-        print("❌ Missing HF_TOKEN or OPENAI_API_KEY environment variable.", file=sys.stderr)
-        sys.exit(1)
-        
     return OpenAI(
-        api_key=API_KEY,
-        base_url=API_BASE_URL
+        api_key=HF_TOKEN,
+        base_url=API_BASE_URL,
     )
 
 
@@ -81,31 +80,31 @@ def infer_action(obs: dict, task_id: str, client: OpenAI) -> dict:
 
 def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
     log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
-    
+
     rewards = []
     steps_taken = 0
     score = 0.0
     success = False
-    
+
     try:
         # 1. Reset
         r = http_client.post(f"{ENV_URL}/reset", json={"task_id": task_id})
         r.raise_for_status()
         obs = r.json()
         ep = obs["episode_id"]
-        
+
         done = obs.get("done", False)
-        
+
         while not done:
             steps_taken += 1
             action = infer_action(obs, task_id, llm_client)
-            
+
             # 2. Step in env
             try:
                 r2 = http_client.post(f"{ENV_URL}/step?episode_id={ep}", json=action)
                 r2.raise_for_status()
                 obs = r2.json()
-                
+
                 reward = float(obs.get("reward", 0.0))
                 done = obs.get("done", False)
                 error_msg = None
@@ -113,28 +112,30 @@ def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
                 reward = 0.0
                 done = True
                 error_msg = str(e)
-            
+
             rewards.append(reward)
-            
-            # 3. Log step with compact, single-line json action output
+
+            # 3. Log step — compact single-line JSON, no embedded newlines
             action_str = json.dumps(action)
             log_step(step=steps_taken, action=action_str, reward=reward, done=done, error=error_msg)
-            
+
             if done:
                 break
-                
+
         # 4. Final grade
         r3 = http_client.post(f"{ENV_URL}/grade", json={"episode_id": ep})
         r3.raise_for_status()
         result = r3.json()
-        
+
         score = float(result.get("final_score", 0.0))
-        success = score > 0.0 # Define base success threshold
-        
+        success = score > 0.0
+
     except Exception as e:
-        print(f"[DEBUG] run_episode failed context: {e}", file=sys.stderr)
-        
-    log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+        print(f"[DEBUG] run_episode failed: {e}", file=sys.stderr)
+
+    finally:
+        # Always emit [END] — even on exception (required by OpenEnv guidelines §4)
+        log_end(success=success, steps=steps_taken, rewards=rewards)
 
 
 def main():
