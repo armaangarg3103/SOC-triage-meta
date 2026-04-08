@@ -239,6 +239,48 @@ def _build_gradio_ui() -> gr.Blocks:
         </div>
         """)
 
+        # ── Playground Tab (Standard OpenEnv layout) ────────────────────────
+        with gr.Tab("▶️ Playground"):
+            with gr.Row():
+                # Left Column: Quick Start
+                with gr.Column(scale=1):
+                    gr.Markdown("""
+### Quick Start
+▼ **Connect to this environment**
+
+Connect from Python using `httpx`:
+```python
+import httpx
+env_url = "http://localhost:7860"
+
+# Reset
+res = httpx.post(f"{env_url}/reset", json={"task_id": "task1_classification"})
+ep_id = res.json()["episode_id"]
+
+# Step
+action = {"is_real_alert": True, "alert_type": "phishing", "confidence": 0.9}
+obs = httpx.post(f"{env_url}/step?episode_id={ep_id}", json=action)
+```
+
+▼ **Or connect directly via inference baseline script:**
+```bash
+python inference.py --task all
+```
+                    """)
+                
+                # Right Column: Standard Playground
+                with gr.Column(scale=2):
+                    gr.Markdown("### Playground\nClick **Reset** to start a new episode.")
+                    pg_action = gr.Textbox(label="Message / Action (JSON)", lines=4, placeholder='{\n  "is_real_alert": true,\n  "alert_type": "phishing",\n  "confidence": 0.9\n}')
+                    
+                    with gr.Row():
+                        pg_step_btn  = gr.Button("Step")
+                        pg_reset_btn = gr.Button("Reset")
+                        pg_state_btn = gr.Button("Get State")
+                    
+                    pg_status = gr.Textbox(label="Status", interactive=False)
+                    pg_output = gr.JSON(label="Raw JSON response")
+
         # ── Task 1 tab ──────────────────────────────────────────────────────
         with gr.Tab("🔍 Task 1 — Alert Classification"):
             gr.Markdown("### Alert Classification\n*Easy* — Classify the alert type and decide if it's a real threat.")
@@ -506,6 +548,45 @@ Frontier models perform surprisingly poorly on SOC tasks — this benchmark reve
             inputs=[t3_ep_id, t3_summary, t3_steps, t3_systems, t3_escalate, t3_technique, t3_reasoning],
             outputs=[t3_score, t3_feedback, t3_truth],
         )
+
+        # Playground handlers
+        _pg_state = {"ep_id": ""}
+        
+        def pg_reset():
+            r = httpx.post(f"{BASE_URL}/reset", json={"task_id": "task1_classification"})
+            resp = r.json()
+            _pg_state["ep_id"] = resp.get("episode_id", "")
+            return f"Reset triggered (Task 1). ID: {_pg_state['ep_id']}", resp
+            
+        def pg_step(action_str):
+            if not _pg_state.get("ep_id"):
+                return "❌ No active episode. Click Reset.", {}
+            try:
+                import json
+                action = json.loads(action_str)
+            except Exception:
+                return "❌ Action must be valid JSON.", {}
+            try:
+                r = httpx.post(f"{BASE_URL}/step?episode_id={_pg_state['ep_id']}", json=action)
+                if r.status_code == 200:
+                   resp = r.json()
+                   return f"Step taken. Done: {resp.get('done')}", resp
+                return f"HTTP Error {r.status_code}", r.json()
+            except Exception as e:
+                return f"Error: {e}", {}
+                
+        def pg_state():
+            if not _pg_state.get("ep_id"):
+                return "❌ No active episode.", {}
+            try:
+                r = httpx.get(f"{BASE_URL}/state?episode_id={_pg_state['ep_id']}")
+                return "State retrieved.", r.json()
+            except Exception as e:
+                return f"Error: {e}", {}
+
+        pg_reset_btn.click(pg_reset, outputs=[pg_status, pg_output])
+        pg_step_btn.click(pg_step, inputs=[pg_action], outputs=[pg_status, pg_output])
+        pg_state_btn.click(pg_state, outputs=[pg_status, pg_output])
 
     return demo
 
