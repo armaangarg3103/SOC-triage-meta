@@ -24,7 +24,7 @@ from typing import Dict, Optional
 
 import gradio as gr
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -140,7 +140,7 @@ async def list_tasks():
 # ---------------------------------------------------------------------------
 
 @app.post("/reset", response_model=SOCAlertObservation, tags=["environment"])
-async def reset_task(req: Optional[ResetRequest] = None):
+async def reset_task(req: Optional[ResetRequest] = Body(None)):
     """
     Initializes a new episode for a given task.
     """
@@ -187,13 +187,18 @@ async def get_state(episode_id: str):
 
 
 @app.post("/grade", response_model=EpisodeResult, tags=["environment"])
-async def grade_episode(req: GraderRequest):
-    """Return the full scored result for a completed episode."""
-    env = _EPISODES.get(req.episode_id)
+async def grade_episode(req: Optional[GraderRequest] = Body(None)):
+    """
+    Final grading for an episode.
+    """
+    if req is None or not req.episode_id:
+        raise HTTPException(status_code=400, detail="episode_id is required for grading")
+    ep_id = req.episode_id
+    env = _EPISODES.get(ep_id)
     if env is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Episode '{req.episode_id}' not found.",
+            detail=f"Episode '{ep_id}' not found.",
         )
     try:
         result = env.grade_episode()
