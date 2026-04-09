@@ -109,7 +109,7 @@ def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
                 done = obs.get("done", False)
                 error_msg = None
             except Exception as e:
-                reward = 0.01
+                reward = 0.0
                 done = True
                 error_msg = str(e)
 

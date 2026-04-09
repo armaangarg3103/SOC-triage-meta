@@ -96,7 +96,7 @@ def build_observation(
             )
         ),
         done=(turn == max_turns),
-        reward=reward,
+        reward=max(0.001, reward),
     )
 
 
@@ -209,7 +209,6 @@ def grade(action: SOCAlertAction, scenario: dict) -> Tuple[float, Dict, str]:
                 f"❌ Wrong attack start turn: got {agent_turn}, expected {ground_turn} (+0.0)"
             )
 
-    score = max(0.001, min(0.999, score))
     return score, breakdown, "  ".join(feedback_parts)
 
 

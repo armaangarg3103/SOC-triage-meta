@@ -89,7 +89,7 @@ def build_observation(scenario: dict, episode_id: str) -> SOCAlertObservation:
             "6. Your reasoning"
         ),
         done=False,
-        reward=0.0,
+        reward=0.001,
     )
 
 
@@ -314,7 +314,6 @@ def grade(action: SOCAlertAction, scenario: dict) -> Tuple[float, Dict, str]:
     breakdown["response_quality"] = quality_score
     feedback_parts.append(f"ℹ️ Response quality score: {quality_score:.2f}/0.20")
 
-    score = max(0.001, min(0.999, score))
     return score, breakdown, "  ".join(feedback_parts)
 
 

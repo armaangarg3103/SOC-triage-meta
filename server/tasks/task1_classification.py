@@ -79,7 +79,7 @@ def build_observation(scenario: dict, episode_id: str) -> SOCAlertObservation:
             "Respond using the structured action format."
         ),
         done=False,
-        reward=0.0,
+        reward=0.001,
     )
 
 
@@ -140,7 +140,6 @@ def grade(action: SOCAlertAction, scenario: dict) -> Tuple[float, Dict, str]:
             f"ℹ️ Alert type scoring skipped — this is a false positive."
         )
 
-    score = max(0.001, min(0.999, score))
     return score, breakdown, "  ".join(feedback_parts)
 
 
