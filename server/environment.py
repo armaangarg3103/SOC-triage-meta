@@ -16,6 +16,17 @@ from typing import Dict, List, Optional
 from models import EpisodeResult, SOCAlertAction, SOCAlertObservation, TaskID
 from server.tasks import task1_classification, task2_investigation, task3_response
 
+# ---------------------------------------------------------------------------
+# Score clamping — hackathon validator requires scores strictly in (0, 1).
+# i.e. not 0.0 and not 1.0.
+# ---------------------------------------------------------------------------
+_SCORE_EPS = 1e-3  # 0.001
+
+
+def _clamp_score(score: float) -> float:
+    """Map any raw score to the open interval (0.001, 0.999)."""
+    return max(_SCORE_EPS, min(1.0 - _SCORE_EPS, float(score)))
+
 
 class SOCAlertEnvironment:
     """
@@ -54,7 +65,7 @@ class SOCAlertEnvironment:
         self.current_turn       = 1
         self.actions_history    = []
         self.conversation_history = []
-        self.final_score        = 0.01
+        self.final_score        = 0.0
         self.score_breakdown    = {}
         self.feedback           = ""
 
@@ -160,12 +171,15 @@ class SOCAlertEnvironment:
 
         ground_truth = self._get_ground_truth()
 
-        clamped_score = max(0.01, min(0.99, self.final_score))
+        # Clamp scores — validator requires strictly open interval (0, 1)
+        safe_score = _clamp_score(self.final_score)
+        safe_breakdown = {k: _clamp_score(v) for k, v in self.score_breakdown.items()}
+
         return EpisodeResult(
             episode_id=self.episode_id or "",
             task_id=self.task_id.value if self.task_id else "",
-            final_score=clamped_score,
-            score_breakdown=self.score_breakdown,
+            final_score=safe_score,
+            score_breakdown=safe_breakdown,
             feedback=self.feedback,
             ground_truth=ground_truth,
             agent_actions=self.actions_history,
@@ -177,12 +191,17 @@ class SOCAlertEnvironment:
 
     def _run_grader(self, action: SOCAlertAction):
         if self.task_id == TaskID.task1_classification:
-            return task1_classification.grade(action, self.scenario)
+            raw_score, breakdown, feedback = task1_classification.grade(action, self.scenario)
         elif self.task_id == TaskID.task2_investigation:
-            return task2_investigation.grade(action, self.scenario)
+            raw_score, breakdown, feedback = task2_investigation.grade(action, self.scenario)
         elif self.task_id == TaskID.task3_response:
-            return task3_response.grade(action, self.scenario)
-        raise ValueError(f"No grader for task_id: {self.task_id}")
+            raw_score, breakdown, feedback = task3_response.grade(action, self.scenario)
+        else:
+            raise ValueError(f"No grader for task_id: {self.task_id}")
+        # Clamp to open interval (0, 1) — hackathon validator rejects 0.0 and 1.0 exactly.
+        clamped_score = _clamp_score(raw_score)
+        clamped_breakdown = {k: _clamp_score(v) for k, v in breakdown.items()}
+        return clamped_score, clamped_breakdown, feedback
 
     def _get_ground_truth(self) -> dict:
         if self.task_id == TaskID.task1_classification:
