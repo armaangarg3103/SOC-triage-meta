@@ -140,6 +140,7 @@ def grade(action: SOCAlertAction, scenario: dict) -> Tuple[float, Dict, str]:
             f"ℹ️ Alert type scoring skipped — this is a false positive."
         )
 
+    score = max(0.001, min(0.999, score))
     return score, breakdown, "  ".join(feedback_parts)
 
 
