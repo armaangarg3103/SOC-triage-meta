@@ -54,7 +54,7 @@ class SOCAlertEnvironment:
         self.current_turn       = 1
         self.actions_history    = []
         self.conversation_history = []
-        self.final_score        = 0.0
+        self.final_score        = 0.01
         self.score_breakdown    = {}
         self.feedback           = ""
 
@@ -160,10 +160,11 @@ class SOCAlertEnvironment:
 
         ground_truth = self._get_ground_truth()
 
+        clamped_score = max(0.01, min(0.99, self.final_score))
         return EpisodeResult(
             episode_id=self.episode_id or "",
             task_id=self.task_id.value if self.task_id else "",
-            final_score=self.final_score,
+            final_score=clamped_score,
             score_breakdown=self.score_breakdown,
             feedback=self.feedback,
             ground_truth=ground_truth,
