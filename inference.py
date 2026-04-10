@@ -41,9 +41,9 @@ def log_step(step: int, action: str, reward: float, done: bool, error: str = Non
     clamped = _clamp_reward(reward)
     print(f"[STEP] step={step} action={action_str} reward={reward:.2f} done={done_val} error={error_val}", flush=True)
 
-def log_end(success: bool, steps: int, rewards: list) -> None:
+def log_end(success: bool, steps: int, score: float, rewards: list) -> None:
     rewards_str = ",".join(f"{float(r):.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
 
 
 def get_llm_client() -> OpenAI:
@@ -140,7 +140,7 @@ def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
 
     finally:
         # Always emit [END] — even on exception (required by OpenEnv guidelines §4)
-        log_end(success=success, steps=steps_taken, rewards=rewards)
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
 
 def main():
