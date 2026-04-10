@@ -18,7 +18,6 @@ tasks:
       the alert type (phishing, malware, lateral_movement, data_exfil, false_positive).
     grader: deterministic
     max_turns: 1
-    expected_score: 0.72
     scoring:
       real_alert_detection: 0.5
       alert_type_classification: 0.5
@@ -33,7 +32,6 @@ tasks:
       MITRE lookup table — the framework is public documentation.
     grader: deterministic_lookup
     max_turns: 4
-    expected_score: 0.61
     scoring:
       mitre_tactic: 0.40
       severity: 0.30
@@ -49,7 +47,6 @@ tasks:
       + containment quality (heuristic) + LLM judge with fallback.
     grader: hybrid
     max_turns: 1
-    expected_score: 0.54
     scoring:
       mitre_technique_accuracy: 0.30
       containment_quality: 0.30
@@ -65,3 +62,10 @@ endpoints:
   info:   "GET /info"
   tasks:  "GET /tasks"
   ui:     "GET /"
+
+reward_range: [0.0, 1.0]
+
+baseline_scores:
+  task1_classification: 0.72
+  task2_investigation: 0.61
+  task3_response: 0.54

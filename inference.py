@@ -39,10 +39,10 @@ def log_step(step: int, action: str, reward: float, done: bool, error: str = Non
     # Normalize action string without newlines to strictly conform to single-line regex rules
     action_str = action.replace("\n", " ").replace("\r", "") if action else "null"
     clamped = _clamp_reward(reward)
-    print(f"[STEP] step={step} action={action_str} reward={clamped:.4f} done={done_val} error={error_val}", flush=True)
+    print(f"[STEP] step={step} action={action_str} reward={reward:.2f} done={done_val} error={error_val}", flush=True)
 
 def log_end(success: bool, steps: int, rewards: list) -> None:
-    rewards_str = ",".join(f"{_clamp_reward(float(r)):.4f}" for r in rewards)
+    rewards_str = ",".join(f"{float(r):.2f}" for r in rewards)
     print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}", flush=True)
 
 
