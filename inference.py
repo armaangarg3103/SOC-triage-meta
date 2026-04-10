@@ -29,15 +29,20 @@ ENV_URL      = os.getenv("ENV_URL", "http://localhost:7860").rstrip("/")
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
+def _clamp_reward(r: float) -> float:
+    """Ensure reward is strictly in (0, 1) — never exactly 0.0 or 1.0."""
+    return max(0.001, min(0.999, float(r)))
+
 def log_step(step: int, action: str, reward: float, done: bool, error: str = None) -> None:
     error_val = error if error else "null"
     done_val = str(done).lower()
     # Normalize action string without newlines to strictly conform to single-line regex rules
     action_str = action.replace("\n", " ").replace("\r", "") if action else "null"
-    print(f"[STEP] step={step} action={action_str} reward={reward:.2f} done={done_val} error={error_val}", flush=True)
+    clamped = _clamp_reward(reward)
+    print(f"[STEP] step={step} action={action_str} reward={clamped:.4f} done={done_val} error={error_val}", flush=True)
 
 def log_end(success: bool, steps: int, rewards: list) -> None:
-    rewards_str = ",".join(f"{float(r):.2f}" for r in rewards)
+    rewards_str = ",".join(f"{_clamp_reward(float(r)):.4f}" for r in rewards)
     print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}", flush=True)
 
 
@@ -105,11 +110,11 @@ def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
                 r2.raise_for_status()
                 obs = r2.json()
 
-                reward = float(obs.get("reward", 0.0))
+                reward = _clamp_reward(float(obs.get("reward", 0.001)))
                 done = obs.get("done", False)
                 error_msg = None
             except Exception as e:
-                reward = 0.0
+                reward = 0.001
                 done = True
                 error_msg = str(e)
 
@@ -127,8 +132,8 @@ def run_episode(http_client: httpx.Client, llm_client: OpenAI, task_id: str):
         r3.raise_for_status()
         result = r3.json()
 
-        score = float(result.get("final_score", 0.0))
-        success = score > 0.0
+        score = _clamp_reward(float(result.get("final_score", 0.001)))
+        success = score > 0.001
 
     except Exception as e:
         print(f"[DEBUG] run_episode failed: {e}", file=sys.stderr)
