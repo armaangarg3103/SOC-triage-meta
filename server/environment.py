@@ -70,11 +70,20 @@ class SOCAlertEnvironment:
         self.feedback           = ""
 
         if self.task_id == TaskID.task1_classification:
+            self.score_breakdown = {
+                "real_alert_detection": 0.0,
+                "alert_type_classification": 0.0,
+            }
             self.scenario = task1_classification.build_scenario(alert_id)
             self.max_turns = 1
             obs = task1_classification.build_observation(self.scenario, self.episode_id)
 
         elif self.task_id == TaskID.task2_investigation:
+            self.score_breakdown = {
+                "mitre_tactic": 0.0,
+                "severity": 0.0,
+                "attack_started_at_turn": 0.0,
+            }
             self.scenario = task2_investigation.build_scenario(alert_id)
             self.max_turns = self.scenario["max_turns"]
             obs = task2_investigation.build_observation(
@@ -82,6 +91,12 @@ class SOCAlertEnvironment:
             )
 
         elif self.task_id == TaskID.task3_response:
+            self.score_breakdown = {
+                "mitre_technique_accuracy": 0.0,
+                "containment_quality": 0.0,
+                "escalation_decision": 0.0,
+                "response_quality": 0.0,
+            }
             self.scenario = task3_response.build_scenario(alert_id)
             self.max_turns = 1
             obs = task3_response.build_observation(self.scenario, self.episode_id)

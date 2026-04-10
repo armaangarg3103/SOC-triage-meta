@@ -95,7 +95,7 @@ def build_observation(
                 f"{'On this final turn, provide your complete MITRE classification and severity.' if turn == max_turns else ''}"
             )
         ),
-        done=(turn == max_turns),
+        done=False,
         reward=max(0.001, reward),
     )
 
